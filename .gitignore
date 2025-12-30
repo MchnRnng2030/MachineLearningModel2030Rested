@@ -205,3 +205,11 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# data 전체 무시
+data/*
+
+# derived 폴더는 예외로 추적
+!data/derived/
+!data/derived/**
+

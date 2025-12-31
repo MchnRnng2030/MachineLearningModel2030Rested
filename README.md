@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ###CatBoost Architecture+DiCE algorithm for ML###
 
 #모델 사용 및 역할 정의#
@@ -51,7 +50,3 @@ Train 성능 대비 Test 성능이 급격히 하락하지 않음
 모델은 과적합보다는 일반화 성향을 보임
 일부 recall 저하는 의도된 설계(precision 우선 정책)의 결과로 해석 가능
 
-=======
-# 2030-
-2030쉬었음 머신러닝모델
->>>>>>> main

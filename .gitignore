@@ -213,12 +213,10 @@ data/*
 !data/derived/
 !data/derived/**
 
-<<<<<<< HEAD
 # ===============================
 # Large generated results
 # ===============================
 results/final/*.csv
 results/final/*.parquet
 results/final/*.pkl
-=======
->>>>>>> main
+

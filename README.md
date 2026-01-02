@@ -94,14 +94,14 @@ df_policy, risk_env = build_hybrid_policy_matrix(df_main, df_test)
 df_policy.to_csv("results/policy/policy_matrix_final.csv")
 ```
 
-# 핵심 결합 로직
+### 핵심 결합 로직
 
 환경 위험은 개인별 확률을 그대로 사용하지 않고, 동일한 구조적 환경을 공유하는 집단 단위로 평균화한다.
 
 환경 단위(KEY) = 조사연월 × 성별 × 연령대
 ![alt text](image.png)
 
-# 정책 스코어 정의
+### 정책 스코어 정의
 
 재연결지수 (Policy Efficiency Index)
 정책 투입 대비 성공 가능성을 나타내는 지표
@@ -113,7 +113,7 @@ RI=0.3×(1−환경위험)+0.7×취업확률
 
 NS=0.7×환경위험+0.3×(1−취업확률)
 
-# 모델의 역할 요약
+### 모델의 역할 요약
 
 본 정책 스크리닝 모델은 예측 정확도 자체를 목표로 하지 않는다.
 구조적 환경 위험과 개인 취업 가능성을 분리·결합함으로써,

@@ -41,16 +41,13 @@
 
 ### 정책 매트릭스의 구조
 
-각 개인 \( i \)는 다음의 2차원 좌표를 가진다.
+각 개인(denoted as i)은 다음의 정책 좌표를 가진다.
 
-\[
-\text{PolicyPosition}_i
-=
-(\bar{R}^{env}_i,\; P^{emp}_i)
-\]
+PolicyPosition_i = ( R_env_i , P_emp_i )
 
-- \( \bar{R}^{env}_i \): 동일한 구조적 환경 집단의 평균 단절 위험
-- \( P^{emp}_i \): 개인의 취업 가능성 확률
+- R_env_i : 동일한 구조적 환경 집단의 평균 단절 위험
+- P_emp_i : 개인의 취업 가능성 확률
+
 
 이 분리를 통해 개인 책임 전가 없이 구조적 위험과 개인 상태를 구분할 수 있다.
 
@@ -120,6 +117,106 @@ NS=0.7×환경위험+0.3×(1−취업확률)
 본 정책 스크리닝 모델은 예측 정확도 자체를 목표로 하지 않는다.
 구조적 환경 위험과 개인 취업 가능성을 분리·결합함으로써,
 개인 책임 전가 없이 정책 개입 우선순위를 제시하는 2차원 정책 분류 도구로 활용된다.
+
+---
+
+### 2️⃣ 취업 확률 예측 모델 (Employment Probability Model)
+**목적**: 직업훈련 효과 검증 및 청년 취업 결정 요인 분석
+
+#### 핵심 가설
+"직업훈련 경험이 있는 청년의 취업 확률이 높으며, '쉬었음' 상태는 취업에 가장 큰 부정적 영향을 미친다"
+
+#### 모델 구조
+- **로지스틱 회귀 (LR)**: 해석 가능성 중심
+- **랜덤 포레스트 (RF)**: 비선형 상호작용 포착
+
+#### 학습 과정
+```python
+# 데이터 준비
+df_model = df_youth.copy()
+df_model['취업여부'] = (df_model['경제활동상태코드'] == 1).astype(int)
+df_model['직업훈련경험'] = df_model['직업교육및직장체험_직업교육수혜구분코드'].isin([2,3,4]).astype(int)
+
+# Train/Test Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, stratify=y)
+
+# 로지스틱 회귀
+model_lr = LogisticRegression(max_iter=1000)
+model_lr.fit(X_train, y_train)
+
+# 랜덤 포레스트 (상호작용 변수 포함)
+model_rf = RandomForestClassifier(n_estimators=500)
+model_rf.fit(X_train_rf, y_train_rf)
+
+# 전체 데이터 예측 저장
+df_out["p_employ_lr"] = model_lr.predict_proba(X_all)[:, 1]
+df_out["p_employ_rf"] = model_rf.predict_proba(X_all_rf)[:, 1]
+df_out.to_csv("results/employment/employment_predictions.csv")
+```
+
+#### 출력 변수
+- `p_employ_lr`: 로지스틱 회귀 취업 확률
+- `p_employ_rf`: 랜덤 포레스트 취업 확률
+- `직업훈련경험`: 훈련 이수 여부
+- `쉬었음`: 쉬었음 상태 여부
+
+---
+
+### 3️⃣ 이직 성공 예측 모델 (Career Mobility Model)
+**목적**: 개인의 이직 성공 가능성 예측 및 행동 변경 가능 요인 제시
+
+#### 핵심 개념
+- **이직 성공 확률**: 현재 조건에서 이직 시 성공 가능성
+- **Counterfactual 분석**: 어떤 조건을 바꾸면 이직 성공 가능한지 제시
+
+#### 모델 구조
+- **CatBoost Classifier**: 범주형 변수 자동 처리, 고성능
+- **DiCE (Diverse Counterfactual Explanations)**: 실행 가능한 조건 변경 제시
+
+#### 학습 과정
+```python
+# 데이터 준비
+X = datas_final[feature_cols]
+y = datas_2030['이전직장사항_전직유무'].replace(2, 0)  # 1=이직 성공, 0=실패
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y)
+
+# CatBoost 학습
+cat = CatBoostClassifier(
+    learning_rate=0.1,
+    iterations=800,
+    depth=10,
+    subsample=0.8,
+    scale_pos_weight=0.5
+)
+cat.fit(X_train, y_train)
+
+# 전체 데이터 예측 저장
+df_cbm["cbm_p_success"] = cat.predict_proba(X_all)[:, 1]
+df_cbm["cbm_pred"] = cat.predict(X_all)
+df_cbm.to_csv("results/cbm/cbm_predictions.csv")
+```
+
+#### DiCE 적용
+```python
+# DiCE 초기화
+d = dice_ml.Data(dataframe=df_train, outcome_name='이전직장사항_전직유무')
+m = dice_ml.Model(model=cat, backend="sklearn")
+exp = Dice(d, m, method="random")
+
+# 반사실적 설명 생성
+cf = exp.generate_counterfactuals(
+    query_instances=query_row,
+    total_CFs=3,
+    desired_class=1,
+    features_to_vary=ACTIONABLE_FEATURES  # 변경 가능한 변수만
+)
+```
+
+#### 출력 변수
+- `cbm_p_success`: 이직 성공 확률
+- `cbm_pred`: 이직 성공 예측 (0/1)
+- **Actionable Features**: 구직활동, 직업교육, 직장체험 등
 
 ---
 

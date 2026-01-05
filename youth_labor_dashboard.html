@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>청년 노동시장 통합 분석 플랫폼</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function YouthLaborDashboard() {
+            const [activeTab, setActiveTab] = useState('intro');
+            const [formData, setFormData] = useState({
+                성별코드: 1,
+                만연령: 25,
+                연령계층코드: 2,
+                혼인상태코드: 1,
+                교육정도_학력구분코드: 4,
+                교육정도_계열코드: 10,
+                가구주관계코드: 3,
+                가장최근학교_년제수: 4,
+                가장최근학교_휴학경험유무: 2,
+                직업훈련경험: 0,
+                직업교육및직장체험_직업교육수혜구분코드: 1,
+                직업교육및직장체험_취업관련시험준비여부: 1,
+                직업교육및직장체험_취업관련시험준비분야코드: 1,
+                직업교육및직장체험_직장체험주요형태코드: 1,
+                구직사항_구직활동기간: 0,
+                구직사항_주요구직방법1코드: 1,
+                구직사항_주요구직경로1코드: 1
+            });
+            const [result, setResult] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [apiUrl, setApiUrl] = useState('http://127.0.0.1:5000');
+
+            const handleInputChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({
+                    ...prev,
+                    [name]: parseInt(value) || 0
+                }));
+            };
+
+            const handleSubmit = async (endpoint) => {
+                setLoading(true);
+                try {
+                    // 주소 뒤에 경로가 중복되지 않도록 클렌징
+                    const base = apiUrl.trim().replace(/\/$/, "").replace(/\/persona\/(all|policy|cbm)$/, "");
+                    
+                    const response = await fetch(`${base}/persona/${endpoint}`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`서버 응답 오류: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    setResult(data);
+                    setActiveTab('result');
+                } catch (error) {
+                    console.error('상세 에러:', error);
+                    alert(`연결 실패!\n에러내용: ${error.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const renderIntro = () => (
+                <div className="max-w-6xl mx-auto space-y-8">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-12 rounded-2xl shadow-2xl">
+                        <h1 className="text-5xl font-bold mb-4">청년 노동시장 통합 분석 플랫폼</h1>
+                        <p className="text-xl opacity-90">구조적 위치 기반 정책 진단 및 개인 맞춤 커리어 가이드</p>
+                    </div>
+
+                    <div className="grid md:grid-cols-3 gap-6">
+                        <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition border-t-4 border-blue-500">
+                            <div className="text-4xl mb-4">📊</div>
+                            <h3 className="text-2xl font-bold mb-3 text-gray-800">정책 스크리닝</h3>
+                            <p className="text-gray-600 mb-4">구조적 환경 위험과 개인 취업 확률을 분석하여 정책 개입 우선순위를 제시합니다.</p>
+                        </div>
+
+                        <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition border-t-4 border-green-500">
+                            <div className="text-4xl mb-4">💼</div>
+                            <h3 className="text-2xl font-bold mb-3 text-gray-800">취업 확률 예측</h3>
+                            <p className="text-gray-600 mb-4">직업훈련 효과를 검증하고 청년 취업 결정 요인을 분석합니다.</p>
+                        </div>
+
+                        <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition border-t-4 border-purple-500">
+                            <div className="text-4xl mb-4">🎯</div>
+                            <h3 className="text-2xl font-bold mb-3 text-gray-800">이직 성공 예측</h3>
+                            <p className="text-gray-600 mb-4">CatBoost와 DiCE를 활용한 이직 가능성 예측 및 행동 가이드를 제공합니다.</p>
+                        </div>
+                    </div>
+
+                    <div className="text-center">
+                        <button
+                            onClick={() => setActiveTab('form')}
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-12 py-4 rounded-full text-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition shadow-lg hover:shadow-xl transform hover:scale-105"
+                        >
+                            분석 시작하기 →
+                        </button>
+                    </div>
+                </div>
+            );
+
+            const renderForm = () => (
+                <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+                    <h2 className="text-3xl font-bold mb-6 text-gray-800">개인 정보 입력</h2>
+                    
+                    <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <label className="block text-sm font-medium text-blue-900 mb-2">API 서버 주소 (예: http://127.0.0.1:5000)</label>
+                        <input
+                            type="text"
+                            value={apiUrl}
+                            onChange={(e) => setApiUrl(e.target.value)}
+                            className="w-full px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6 mb-8 text-sm">
+                        {Object.keys(formData).map((key) => (
+                            <div key={key}>
+                                <label className="block font-medium text-gray-700 mb-1">{key}</label>
+                                <input
+                                    type="number"
+                                    name={key}
+                                    value={formData[key]}
+                                    onChange={handleInputChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="flex gap-4">
+                        <button onClick={() => handleSubmit('all')} disabled={loading} className="flex-1 bg-indigo-600 text-white py-4 rounded-xl font-bold hover:bg-indigo-700 shadow-lg disabled:opacity-50">통합 분석</button>
+                        <button onClick={() => handleSubmit('policy')} disabled={loading} className="flex-1 bg-green-600 text-white py-4 rounded-xl font-bold hover:bg-green-700 shadow-lg disabled:opacity-50">정책 진단만</button>
+                        <button onClick={() => handleSubmit('cbm')} disabled={loading} className="flex-1 bg-purple-600 text-white py-4 rounded-xl font-bold hover:bg-purple-700 shadow-lg disabled:opacity-50">이직 예측만</button>
+                    </div>
+                </div>
+            );
+
+            const renderResult = () => {
+                if (!result) return null;
+
+                // [핵심 로직] 통합 결과와 개별 결과를 모두 수용하도록 데이터 추출
+                const policy = result.policy || (result.level ? result : null);
+                const cbm = result.cbm || (result.이직성공확률 !== undefined ? result : null);
+                const personal = result.개인판단 || null;
+
+                return (
+                    <div className="max-w-6xl mx-auto space-y-6 pb-20">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-3xl font-bold text-gray-800">분석 결과</h2>
+                            <button onClick={() => setActiveTab('form')} className="px-6 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition">← 다시 입력</button>
+                        </div>
+
+                        {/* 정책 스크리닝 카드 */}
+                        {policy && (
+                            <div className="bg-white rounded-xl shadow-lg p-8 border-l-8 border-blue-500">
+                                <h3 className="text-2xl font-bold mb-6 text-blue-700 flex items-center">📊 정책 스크리닝 결과</h3>
+                                <div className="grid md:grid-cols-3 gap-6 mb-6">
+                                    <div className="bg-blue-50 p-6 rounded-lg">
+                                        <div className="text-sm text-blue-600 font-medium mb-1">분석 수준</div>
+                                        <div className="text-2xl font-bold">{policy.level}</div>
+                                    </div>
+                                    <div className="bg-green-50 p-6 rounded-lg">
+                                        <div className="text-sm text-green-600 font-medium mb-1">정책 유형</div>
+                                        <div className="text-xl font-bold">{policy.정책판단?.정책유형 || "미산출"}</div>
+                                    </div>
+                                    <div className="bg-amber-50 p-6 rounded-lg">
+                                        <div className="text-sm text-amber-600 font-medium mb-1">지원필요도 점수</div>
+                                        <div className="text-2xl font-bold">{(policy.정책판단?.지원필요도점수 * 100).toFixed(1)}점</div>
+                                    </div>
+                                </div>
+                                {policy.취업확률 && (
+                                    <div className="bg-gray-50 p-6 rounded-lg">
+                                        <h4 className="font-bold text-gray-700 mb-3">직업교육 효과</h4>
+                                        <div className="flex justify-between text-sm">
+                                            <span>미이수 확률: {(policy.취업확률.직업교육_미이수 * 100).toFixed(1)}%</span>
+                                            <span>이수 확률: {(policy.취업확률.직업교육_이수 * 100).toFixed(1)}%</span>
+                                            <span className="font-bold text-blue-600">증가폭: {(policy.취업확률.증가폭 * 100).toFixed(1)}%p</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* 이직 성공 예측 카드 */}
+                        {cbm && (
+                            <div className="bg-white rounded-xl shadow-lg p-8 border-l-8 border-purple-500">
+                                <h3 className="text-2xl font-bold mb-6 text-purple-700 flex items-center">🎯 이직 성공 예측 결과</h3>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className={`p-8 rounded-lg ${cbm.이직성공확률 >= 0.5 ? 'bg-green-50' : 'bg-red-50'}`}>
+                                        <div className="text-sm font-medium mb-2">이직 성공 확률</div>
+                                        <div className="text-4xl font-bold">{(cbm.이직성공확률 * 100).toFixed(1)}%</div>
+                                    </div>
+                                    <div className="bg-gray-50 p-8 rounded-lg flex flex-col justify-center">
+                                        <div className="text-sm text-gray-500 mb-1">판정</div>
+                                        <div className="text-3xl font-bold text-gray-900">{cbm.판정}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 개인 안정성 카드 (all 버튼 시 노출) */}
+                        {personal && (
+                            <div className="bg-white rounded-xl shadow-lg p-8 border-l-8 border-indigo-500">
+                                <h3 className="text-2xl font-bold mb-6 text-indigo-700 flex items-center">💡 개인 안정성 분석</h3>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <div className="text-lg font-bold text-indigo-900 mb-4">상태: {personal.개인안정성}</div>
+                                        <div className="space-y-1">
+                                            {personal.근거?.map((item, i) => <div key={i} className="text-sm text-gray-600">✓ {item}</div>)}
+                                        </div>
+                                    </div>
+                                    <div className="bg-indigo-50 p-6 rounded-lg text-center">
+                                        <div className="text-sm text-indigo-600 mb-1">안정성 점수</div>
+                                        <div className="text-4xl font-bold">{personal.안정성점수}/5</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 종합 해석 및 권고 (all 버튼 시 노출) */}
+                        {result.해석 && (
+                            <div className="bg-gradient-to-br from-gray-800 to-indigo-900 text-white rounded-xl shadow-lg p-8">
+                                <h3 className="text-2xl font-bold mb-4">📋 종합 해석 및 권고사항</h3>
+                                <p className="text-lg mb-6 opacity-90">{result.해석}</p>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="bg-white/10 p-4 rounded-lg">
+                                        <div className="text-xs opacity-60 mb-1">권고 행동</div>
+                                        <div className="text-xl font-bold">{result.권고행동}</div>
+                                    </div>
+                                    {result.추가권고 && (
+                                        <div className="bg-white/10 p-4 rounded-lg">
+                                            <div className="text-xs opacity-60 mb-1">개인 행동 지침</div>
+                                            <div className="text-xl font-bold">{result.추가권고.개인행동}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-amber-50 border-l-4 border-amber-500 p-6 rounded-lg text-sm text-amber-800">
+                            <strong>⚠️ 중요 안내:</strong> 본 분석은 정책 스크리닝 도구로, 개개인의 노력을 평가하지 않으며 최종 결정은 전문가 상담을 권장합니다.
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="min-h-screen bg-gray-100 py-8 px-4 font-sans">
+                    <nav className="max-w-6xl mx-auto mb-8 flex gap-4">
+                        {['intro', 'form', 'result'].map(tab => (
+                            (tab !== 'result' || result) && (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-6 py-3 rounded-lg font-bold transition ${activeTab === tab ? 'bg-blue-600 text-white shadow-lg' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    {tab === 'intro' ? '소개' : tab === 'form' ? '분석하기' : '결과 보기'}
+                                </button>
+                            )
+                        ))}
+                    </nav>
+                    <main>
+                        {activeTab === 'intro' ? renderIntro() : activeTab === 'form' ? renderForm() : renderResult()}
+                    </main>
+                    <footer className="max-w-6xl mx-auto mt-16 pt-8 border-t border-gray-300 text-center text-gray-500 text-xs">
+                        <p>청년 노동시장 통합 분석 플랫폼 | 경제활동인구조사 기반 머신러닝 시스템</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<YouthLaborDashboard />, document.getElementById('root'));
+    </script>
+</body>
+</html>

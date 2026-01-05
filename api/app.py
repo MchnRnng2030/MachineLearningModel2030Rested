@@ -6,11 +6,14 @@ from flask import Flask, request, jsonify
 import pandas as pd
 from catboost import CatBoostClassifier
 import os
-
+from flask_cors import CORS  # 1. 이 라인 추가
+# pip install flask_cors
 # ======================================================
 # 1️⃣ APP & DATA LOAD
 # ======================================================
 app = Flask(__name__)
+# 모든 출처, 모든 메서드(POST, OPTIONS 등), 모든 헤더 허용
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # ---------------- POLICY DATA ----------------
 POLICY_DATA_PATH = "../results/final/merged_policy_analysis.csv"

@@ -432,7 +432,7 @@ curl -X POST http://localhost:5000/persona/all \
 ---
 
 ## 📁 파일 구조
-
+* 현재 cbm관련파일은 외부에서 실행해야함
 ```
 project/
 ├── data/
@@ -441,11 +441,10 @@ project/
 │   └── derived/             # 전처리 결과
 │
 ├── models/
-│   ├── policy/              # 정책 모델 (disconnect, employment)
-│   ├── employment/          # 취업 예측 모델 (LR, RF)
-│   └── cbm/                 # 이직 예측 모델 (CatBoost)
+│   ├──각이름별로 저장
 │
 ├── results/
+│   ├──각이름별로 저장
 │   ├── policy/
 │   │   └── policy_matrix_final.csv
 │   ├── employment/
@@ -455,7 +454,10 @@ project/
 │   └── final/
 │       └── merged_policy_analysis.csv
 │
-├── notebooks/
+├── notebooks/                  # 각자작업한파일들
+│   ├── 각이름별로 저장
+│
+├── scripts/                    # 병합 및 최종도출
 │   ├── 01_policy_screening.ipynb
 │   ├── 02_employment_prediction.ipynb
 │   ├── 02_1_check_cbm_predictions.ipynb
@@ -464,7 +466,7 @@ project/
 |   ├── 05A_policy_probabilistic_evaluation.ipynb
 │   └── 05B_cbm_model_evaluation.ipynb
 │
-└── api/
+└── api/                        #api실행파일
     └── app.py
 ```
 

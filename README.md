@@ -506,7 +506,7 @@ python notebooks/05B_cbm_model_evaluation.ipynb
 
 ### 3. API 서버 실행
 ```bash
-python api/persona_api.py
+python api/app.py
 # http://localhost:5000 에서 실행
 ```
 
